@@ -1,12 +1,12 @@
 import apiai
 import json
 import requests
-#from msg import *
-#from dbconn import *
+from msg import *
+from dbconn import *
 from flask import Flask, request, render_template
 
 app = Flask(__name__)
-#dbcnn = Dbconn()
+dbcnn = Dbconn()
 
 # Facebook Messenger Configuration
 recipient_id = None
@@ -30,6 +30,18 @@ def nlp_fallback(input_text, session_id):
     response = req.getresponse()
     raw = json.loads(response.read())
     if raw['status']['code'] == 200:
+        booking=raw['result']['parameters']
+        if 'cursos' in booking.keys():
+            if booking['cursos'] != "":
+                curso=booking['cursos']
+                print(curso)
+        if 'email' and 'given-name' and 'last-name' in booking.keys():
+            
+            if booking['email'] and booking['given-name'] and booking['last-name'] != "":
+                print(curso)
+                print(booking['email'])
+                print(booking['given-name']+" "+booking['last-name'])
+            
         response_text = raw['result']['fulfillment']['messages'][0]['speech']
     else:
         raise Exception('Dialogflow Exception:' + raw['status']['errorType'])
@@ -67,7 +79,8 @@ def webhook():
                         if message_text == "quick":
                             send_quick_reply(sender_id, PAT)
                         response = nlp_fallback(message_text, sender_id)
-                        send_message(sender_id, str(response))
+                        #send_mobile_number(sender_id,PAT,"Bríndeme su número de celular")
+                        send_message(sender_id, str(response),PAT)
                     if "attachments" in messaging_event["message"]:  # contains an image, location or other
                         attachment = messaging_event["message"]["attachments"][0]
                         if attachment['type'] == 'image':
@@ -76,31 +89,7 @@ def webhook():
     return "ok", 200
 
 
-def send_message(recipient_id, message_text):
-     params = {
-         "access_token": PAT
-     }
-     headers = {
-         "Content-Type": "application/json"
-     }
-     data = json.dumps({
-         "recipient": {
-             "id": recipient_id
-         },
-         "message": {
-             "text": message_text
-         }
-     })
-     r = requests.post("https://graph.facebook.com/v4.0/me/messages", params=params, headers=headers, data=data)
-     if r.status_code != 200:
-         print(r.status_code)
-         print(r.text)
 
 if __name__ == '__main__':
-    parameters = {
-        "BicyleType": "Mountain1",
-        "date": "2019-10-21",
-        "time": "10:00:00"
-      }
-    # dbres = dbcnn.add_booking([2, parameters])
+    dbcnn.get_collection("reservaciones")
     app.run(debug = True, port=5500)
