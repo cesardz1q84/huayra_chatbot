@@ -4,6 +4,8 @@ import requests
 from msg import *
 from dbconn import *
 from flask import Flask, request, render_template
+import urllib.request
+from PIL import Image
 
 app = Flask(__name__)
 dbcnn = Dbconn()
@@ -19,6 +21,9 @@ CAT = 'f5fceddd39b64721ae2e6b390381c694'
 # images
 IMG_URL = 'https://i.giphy.com/xT0GqrJNbZkRcr2Jgc.gif'
 
+def open_image(url):
+    image = Image.open(urllib.request.urlopen(url))
+    return image.show()
 
 def nlp_fallback(input_text, session_id):
     global curso_db
@@ -35,24 +40,22 @@ def nlp_fallback(input_text, session_id):
         booking = raw['result']['parameters']
 
         if booking.get('cursos'):
+
             curso_db = booking['cursos']
 
         if 'email' and 'given-name' and 'last-name' in booking.keys():
 
             if booking['email'] and booking['given-name'] and booking['last-name'] != "":
+
                 name_db = booking['given-name']+" "+booking['last-name']
                 email_db = booking['email']
-                print(name_db)
-                print(curso_db)
-                print(email_db)
-                dbcnn.add_booking(
-                    [123333, {"user": "123", "nombre": name_db, "curso": curso_db, "email": email_db}])
+                dbcnn.add_booking([session_id, {
+                                  "user": session_id, "nombre": name_db, "curso": curso_db, "email": email_db}])
 
         response_text = raw['result']['fulfillment']['messages'][0]['speech']
     else:
         raise Exception('Dialogflow Exception:' + raw['status']['errorType'])
     return response_text
-
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -65,7 +68,6 @@ def verify():
         return request.args["hub.challenge"], 200
 
     return render_template("index.html"), 200
-
 
 @app.route('/', methods=['POST'])
 def webhook():
@@ -82,22 +84,17 @@ def webhook():
                 if messaging_event.get("message"):  # someone sent us a message
                     if "text" in messaging_event["message"]:
                         message_text = messaging_event["message"]["text"]
-                        if message_text == "quick":
-                            send_quick_reply(sender_id, PAT, "holace")
                         response = nlp_fallback(message_text, sender_id)
                         send_message(sender_id, str(response), PAT)
                     # contains an image, location or other
                     if "attachments" in messaging_event["message"]:
                         attachment = messaging_event["message"]["attachments"][0]
                         if attachment['type'] == 'image':
+
                             message_image = attachment["payload"]["url"]
-                            send_location_message(
-                                sender_id, "Please let me know where can we pick the bike up", PAT)
+                            open_image(message_image)
     return "ok", 200
 
 
 if __name__ == '__main__':
-    #dbcnn.add_booking([123333,{"user":"1222","nombre":"César Díaz Quispe"}])
-    # buscar=dbcnn.get_booking("123")
-    # print(buscar)
     app.run(debug=True, port=5500)
