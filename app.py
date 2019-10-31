@@ -16,11 +16,12 @@ PAT = 'EAAIDG5XlCi0BAErvhlpccLsEk7vbQ76qwjhwW6BHIBLubBd4DX7FgEfZBOyo0QKatWD7xWv0
 # Dialogflow Configuration
 CAT = 'f5fceddd39b64721ae2e6b390381c694'
 
-
 # images
 IMG_URL = 'https://i.giphy.com/xT0GqrJNbZkRcr2Jgc.gif'
 
+
 def nlp_fallback(input_text, session_id):
+    global curso_db
     #dbwrite = False
     ai = apiai.ApiAI(CAT)
     req = ai.text_request()
@@ -30,18 +31,23 @@ def nlp_fallback(input_text, session_id):
     response = req.getresponse()
     raw = json.loads(response.read())
     if raw['status']['code'] == 200:
-        booking=raw['result']['parameters']
-        if 'cursos' in booking.keys():
-            if booking['cursos'] != "":
-                curso=booking['cursos']
-                print(curso)
+
+        booking = raw['result']['parameters']
+
+        if booking.get('cursos'):
+            curso_db = booking['cursos']
+
         if 'email' and 'given-name' and 'last-name' in booking.keys():
-            
+
             if booking['email'] and booking['given-name'] and booking['last-name'] != "":
-                print(curso)
-                print(booking['email'])
-                print(booking['given-name']+" "+booking['last-name'])
-            
+                name_db = booking['given-name']+" "+booking['last-name']
+                email_db = booking['email']
+                print(name_db)
+                print(curso_db)
+                print(email_db)
+                dbcnn.add_booking(
+                    [123333, {"user": "123", "nombre": name_db, "curso": curso_db, "email": email_db}])
+
         response_text = raw['result']['fulfillment']['messages'][0]['speech']
     else:
         raise Exception('Dialogflow Exception:' + raw['status']['errorType'])
@@ -77,19 +83,21 @@ def webhook():
                     if "text" in messaging_event["message"]:
                         message_text = messaging_event["message"]["text"]
                         if message_text == "quick":
-                            send_quick_reply(sender_id, PAT)
+                            send_quick_reply(sender_id, PAT, "holace")
                         response = nlp_fallback(message_text, sender_id)
-                        #send_mobile_number(sender_id,PAT,"Bríndeme su número de celular")
-                        send_message(sender_id, str(response),PAT)
-                    if "attachments" in messaging_event["message"]:  # contains an image, location or other
+                        send_message(sender_id, str(response), PAT)
+                    # contains an image, location or other
+                    if "attachments" in messaging_event["message"]:
                         attachment = messaging_event["message"]["attachments"][0]
                         if attachment['type'] == 'image':
                             message_image = attachment["payload"]["url"]
-                            send_location_message(sender_id, "Please let me know where can we pick the bike up", PAT)
+                            send_location_message(
+                                sender_id, "Please let me know where can we pick the bike up", PAT)
     return "ok", 200
 
 
-
 if __name__ == '__main__':
-    dbcnn.get_collection("reservaciones")
-    app.run(debug = True, port=5500)
+    #dbcnn.add_booking([123333,{"user":"1222","nombre":"César Díaz Quispe"}])
+    # buscar=dbcnn.get_booking("123")
+    # print(buscar)
+    app.run(debug=True, port=5500)

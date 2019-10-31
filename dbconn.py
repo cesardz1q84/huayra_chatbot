@@ -6,8 +6,7 @@ class Dbconn:
     def __init__(self):
         self.dbuser = "huayro_prod"
         self.dbpass = "huayro_prod"
-        self.dbnode = 'huayra-shard-00-00-yv804.azure.mongodb.net:27017'
-        #self.dbnode = 'ds000000.mlab.com:40017/bikodb'
+        self.dbnode = 'huayra-shard-00-00-yv804.azure.mongodb.net:27017,huayra-shard-00-01-yv804.azure.mongodb.net:27017,huayra-shard-00-02-yv804.azure.mongodb.net:27017/test?ssl=true&replicaSet=huayra-shard-0&authSource=admin&retryWrites=true&w=majority'
         self.db = 'huayra_db'
         self.connection = None
         self.connect()
@@ -27,13 +26,14 @@ class Dbconn:
     def add_booking(self, new_booking):
         if self.db is None:
             self.connect()
-        collection = self.db['bookings']
+        collection = self.db['reservaciones']
         booking_id = collection.insert_one(new_booking[1]).inserted_id
         return True if booking_id is not None else False
 
     def get_booking(self, user_id):
         if self.db is None:
             self.connect()
-        collection = self.db['bookings']
+        collection = self.db['reservaciones']
         record = collection.find_one({"user": user_id})
+        print(record)
         return True if record is not None else False
