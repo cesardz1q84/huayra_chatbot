@@ -23,6 +23,7 @@ IMG_URL = 'https://i.giphy.com/xT0GqrJNbZkRcr2Jgc.gif'
 
 def open_image(url):
     image = Image.open(urllib.request.urlopen(url))
+    print("Voucher recibido")
     return image.show()
 
 def nlp_fallback(input_text, session_id):
