@@ -98,7 +98,7 @@ def webhook():
                         if attachment['type'] == 'image':
 
                             message_image = attachment["payload"]["url"]
-                            open_image(message_image)
+                            #open_image(message_image)
     return "ok", 200
 
 
