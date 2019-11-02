@@ -18,9 +18,6 @@ PAT = 'EAAIDG5XlCi0BAErvhlpccLsEk7vbQ76qwjhwW6BHIBLubBd4DX7FgEfZBOyo0QKatWD7xWv0
 # Dialogflow Configuration
 CAT = 'f5fceddd39b64721ae2e6b390381c694'
 
-# images
-IMG_URL = 'https://i.giphy.com/xT0GqrJNbZkRcr2Jgc.gif'
-
 def open_image(url):
     image = Image.open(urllib.request.urlopen(url))
     print("Voucher recibido")
@@ -54,8 +51,13 @@ def nlp_fallback(input_text, session_id):
                                   "user": session_id, "nombre": name_db, "curso": curso_db, "email": email_db}])
 
         response_text = raw['result']['fulfillment']['messages'][0]['speech']
+
+       # if raw['result']['action'] == 'input.unknown':
+
+            #response_text = 'unknown'
     else:
         raise Exception('Dialogflow Exception:' + raw['status']['errorType'])
+
     return response_text
 
 @app.route('/', methods=['GET'])
@@ -86,6 +88,9 @@ def webhook():
                     if "text" in messaging_event["message"]:
                         message_text = messaging_event["message"]["text"]
                         response = nlp_fallback(message_text, sender_id)
+                        #if response == 'unknown':
+                            #send_message(sender_id, "¿Desea comunicarse con un asesor?", PAT)
+                            #response = "https://bit.ly/2SMJnc1"
                         send_message(sender_id, str(response), PAT)
                     # contains an image, location or other
                     if "attachments" in messaging_event["message"]:
